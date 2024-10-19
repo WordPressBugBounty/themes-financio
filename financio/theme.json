@@ -1,0 +1,159 @@
+{
+	"$schema": "https://schemas.wp.org/wp/6.2/theme.json",
+	"customTemplates": [],
+	"settings": {
+		"appearanceTools": true,
+		"color": {
+			"gradients": [],
+			"palette": [{"slug":"theme-0","name":"Primary","color":"#05b772"},{"slug":"theme-1","name":"Secondary","color":"#1d222a"},{"slug":"theme-2","name":"Text","color":"#798290"},{"slug":"theme-3","name":"Border","color":"#bababa"},{"slug":"theme-4","name":"White","color":"#ffffff"},{"slug":"theme-5","name":"Grey Soft","color":"#f8f8f8"},{"slug":"theme-6","name":"Black","color":"#050505"},{"slug":"theme-7","name":"Overlay","color":"#000000c7"},{"slug":"theme-8","name":"Grey","color":"#e1e1e1"},{"slug":"theme-9","name":"Black 2","color":"#393e44"},{"slug":"theme-10","name":"Quote","color":"#f1f1f1"},{"slug":"theme-11","name":"Hover Button","color":"#04b16d"}]
+		},
+		"custom": {
+			"headings": {
+				"typography": {
+					"fontFamily": "var(--wp--preset--font-family--primary)"
+				}
+			}
+		},
+		"layout": {"contentSize":"1140px","wideSize":"1200px"},
+		"spacing": {
+			"padding": true,
+			"margin": true,
+			"blockGap": true,
+			"units": [
+				"px",
+				"em",
+				"rem",
+				"vh",
+				"vw"
+			]
+		},
+		"typography": {
+			"customFontSize": true,
+			"fontFamilies": [
+				{
+					"fontFace": [
+						{
+								"fontFamily": "Poppins",
+								"fontStretch": "normal",
+								"fontStyle": "normal",
+								"fontWeight": "300",
+								"src": [
+									"file:./assets/fonts/poppins/poppins-v21-latin-300.woff2"
+								]
+							},{
+								"fontFamily": "Poppins",
+								"fontStretch": "normal",
+								"fontStyle": "normal",
+								"fontWeight": "regular",
+								"src": [
+									"file:./assets/fonts/poppins/poppins-v21-latin-regular.woff2"
+								]
+							},{
+								"fontFamily": "Poppins",
+								"fontStretch": "normal",
+								"fontStyle": "normal",
+								"fontWeight": "500",
+								"src": [
+									"file:./assets/fonts/poppins/poppins-v21-latin-500.woff2"
+								]
+							},{
+								"fontFamily": "Poppins",
+								"fontStretch": "normal",
+								"fontStyle": "normal",
+								"fontWeight": "600",
+								"src": [
+									"file:./assets/fonts/poppins/poppins-v21-latin-600.woff2"
+								]
+							},{
+								"fontFamily": "Poppins",
+								"fontStretch": "normal",
+								"fontStyle": "normal",
+								"fontWeight": "700",
+								"src": [
+									"file:./assets/fonts/poppins/poppins-v21-latin-700.woff2"
+								]
+							}
+					],
+					"fontFamily": "Poppins",
+					"name": "Poppins",
+					"slug": "poppins"
+				}
+			],
+			"fontSizes": [
+				{
+					"fluid": {
+						"min": "0.875rem",
+						"max": "1rem"
+					},
+					"size": "1rem",
+					"slug": "small"
+				},
+				{
+					"fluid": {
+						"min": "1rem",
+						"max": "1.125rem"
+					},
+					"size": "1.125rem",
+					"slug": "medium"
+				},
+				{
+					"fluid": {
+						"min": "1.75rem",
+						"max": "1.875rem"
+					},
+					"size": "1.75rem",
+					"slug": "large"
+				},
+				{
+					"fluid": false,
+					"size": "2.25rem",
+					"slug": "x-large"
+				},
+				{
+					"fluid": {
+						"min": "4rem",
+						"max": "10rem"
+					},
+					"size": "10rem",
+					"slug": "xx-large"
+				},
+				{
+					"size": "clamp(32px, 3.889vw, 56px);",
+					"slug": "heading-1"
+				},
+				{
+					"size": "clamp(24px, 2.223vw, 32px);",
+					"slug": "heading-2"
+				},
+				{
+					"size": "clamp(22px, 1.667vw, 24px);",
+					"slug": "heading-3"
+				},
+				{
+					"size": "clamp(21px, 1.458vw, 21px);",
+					"slug": "heading-4"
+				},
+				{
+					"size": "clamp(16px, 1.25vw, 18px);",
+					"slug": "heading-5"
+				},
+				{
+					"size": "clamp(16px, 1.112vw, 16px);",
+					"slug": "heading-6"
+				}
+			]
+		}
+	},
+	"styles": {"spacing":{"blockGap":0},"elements":{"link":{"typography":{"textDecoration":"underline"}}},"blocks":{"core\/list":{"spacing":{"padding":{"right":"15px","left":"15px"}}},"core\/columns":{"spacing":{"blockGap":{"top":"20px"}}},"core\/column":{"spacing":{"padding":{"top":"10px","bottom":"10px"}}}}},
+	"templateParts": [
+		{
+			"area": "header",
+			"name": "header"
+		},
+		{
+			"area": "footer",
+			"name": "footer"
+		}
+	],
+	"version": 2
+}
