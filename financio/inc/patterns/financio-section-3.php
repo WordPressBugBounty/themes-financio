@@ -5,11 +5,11 @@
 return array(
 	'title'      => __( 'Section 3 with Animation', 'financio' ),
 	'categories' => array( 'financio-core' ),
-	'content'    => '<!-- wp:group {"layout":{"type":"default","contentSize":""}} -->
-<div class="wp-block-group"><!-- wp:cover {"url":"' . esc_url( FINANCIO_URI ) . 'assets/img/girl-young-business-businesswoman-office-negotiation-1456587-pxhere.com.jpg","id":34,"dimRatio":70,"overlayColor":"theme-6","isUserOverlayColor":true,"focalPoint":{"x":"0.44","y":"0.02"},"contentPosition":"center center"} -->
-<div class="wp-block-cover"><span aria-hidden="true" class="wp-block-cover__background has-theme-6-background-color has-background-dim-70 has-background-dim"></span><img class="wp-block-cover__image-background wp-image-34" alt="" src="' . esc_url( FINANCIO_URI ) . 'assets/img/girl-young-business-businesswoman-office-negotiation-1456587-pxhere.com.jpg" style="object-position:44% 2%" data-object-fit="cover" data-object-position="44% 2%"/><div class="wp-block-cover__inner-container"><!-- wp:group {"style":{"spacing":{"padding":{"top":"200px","bottom":"280px"}}},"layout":{"contentSize":"1140px","type":"constrained"}} -->
+	'content'    => '<!-- wp:group {"style":{"spacing":{"margin":{"top":"0px","bottom":"0px"}}},"layout":{"type":"default","contentSize":""}} -->
+<div class="wp-block-group" style="margin-top:0px;margin-bottom:0px"><!-- wp:cover {"url":"' . esc_url( trailingslashit( get_template_directory_uri() ) ) . 'assets/img/girl-young-business-businesswoman-office-negotiation-1456587-pxhere.com_.jpg","id":34,"dimRatio":70,"overlayColor":"gv-color-black-tertiary","isUserOverlayColor":true,"focalPoint":{"x":"0.44","y":"0.02"},"contentPosition":"center center"} -->
+<div class="wp-block-cover"><img class="wp-block-cover__image-background wp-image-34" alt="" src="' . esc_url( trailingslashit( get_template_directory_uri() ) ) . 'assets/img/girl-young-business-businesswoman-office-negotiation-1456587-pxhere.com_.jpg" style="object-position:44% 2%" data-object-fit="cover" data-object-position="44% 2%"/><span aria-hidden="true" class="wp-block-cover__background has-gv-color-black-tertiary-background-color has-background-dim-70 has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:group {"style":{"spacing":{"padding":{"top":"200px","bottom":"280px"}}},"layout":{"contentSize":"1140px","type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:200px;padding-bottom:280px"><!-- wp:columns -->
-<div class="wp-block-columns"><!-- wp:column -->
+<div class="wp-block-columns"><!-- wp:column {"style":{"spacing":{"blockGap":"0px"}}} -->
 <div class="wp-block-column"><!-- wp:heading {"level":1,"className":"financio-animate financio-move-right financio-delay-1","style":{"typography":{"textTransform":"capitalize","fontStyle":"normal","fontWeight":"500"},"className":"financio-animate financio-move-up financio-delay-1","spacing":{"margin":{"right":"0px"}}},"textColor":"white","fontSize":"heading-1"} -->
 <h1 class="wp-block-heading financio-animate financio-move-right financio-delay-1 has-white-color has-text-color has-heading-1-font-size" style="margin-right:0px;font-style:normal;font-weight:500;text-transform:capitalize">Financial Solutions That Can Help Your Business Grow</h1>
 <!-- /wp:heading -->
@@ -30,7 +30,7 @@ return array(
 
 <!-- wp:buttons {"style":{"spacing":{"margin":{"top":"20px"}}}} -->
 <div class="wp-block-buttons" style="margin-top:20px"><!-- wp:button {"className":"financio-animate financio-move-right financio-delay-5 is-style-custombuttonfill","style":{"border":{"radius":"5px"},"spacing":{"padding":{"top":"14px","right":"40px","bottom":"14px","left":"40px"}}},"fontSize":"tiny","fontFamily":"primary"} -->
-<div class="wp-block-button has-custom-font-size financio-animate financio-move-right financio-delay-5 is-style-custombuttonfill has-primary-font-family has-tiny-font-size"><a class="wp-block-button__link wp-element-button" href="#" style="border-radius:5px;padding-top:14px;padding-right:40px;padding-bottom:14px;padding-left:40px">Get A Quote</a></div>
+<div class="wp-block-button financio-animate financio-move-right financio-delay-5 is-style-custombuttonfill"><a class="wp-block-button__link has-primary-font-family has-tiny-font-size has-custom-font-size wp-element-button" href="#" style="border-radius:5px;padding-top:14px;padding-right:40px;padding-bottom:14px;padding-left:40px">Get A Quote</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:column -->

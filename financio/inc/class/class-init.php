@@ -10,6 +10,7 @@ namespace Financio;
 
 use WP_Query;
 
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -53,12 +54,12 @@ class Init {
 	 * Load initial hooks.
 	 */
 	private function load_hooks() {
+		add_action( 'after_setup_theme', array( $this, 'setup_theme' ) );
+		add_action( 'after_setup_theme', array( $this, 'maybe_sync_global_styles_after_version_change' ), 20 );
 		add_action( 'init', array( $this, 'register_block_patterns' ), 9 );
-		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'dashboard_scripts' ) );
 
 		add_action( 'wp_ajax_financio_set_admin_notice_viewed', array( $this, 'notice_closed' ) );
-		add_action( 'admin_notices', array( $this, 'notice_install_plugin' ) );
 
 		add_action( 'after_switch_theme', array( $this, 'update_global_styles_after_theme_switch' ) );
 		add_filter( 'gutenverse_template_path', array( $this, 'template_path' ), null, 3 );
@@ -70,16 +71,76 @@ class Init {
 		add_filter( 'gutenverse_stylesheet_directory', array( $this, 'change_stylesheet_directory' ) );
 		add_filter( 'gutenverse_themes_override_mechanism', '__return_true' );
 
-		
+		add_filter( 'gutenverse_themes_support_section_global_style', '__return_true' );
+		add_filter( 'gutenverse_wporg_plus_mechanism', '__return_true' );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 	}
 
 	/**
 	 * Update Global Styles After Theme Switch
 	 */
 	public function update_global_styles_after_theme_switch() {
-		// Get the path to the current theme's theme.json file
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles after a version change.
+	 */
+	public function maybe_sync_global_styles_after_version_change() {
+		$synced_version = get_option( 'financio_global_styles_synced_version' );
+
+		if ( FINANCIO_VERSION === $synced_version ) {
+			return;
+		}
+
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles After Theme Update.
+	 *
+	 * @param WP_Upgrader $upgrader_object Upgrader instance.
+	 * @param array       $options         Update options.
+	 */
+	public function sync_global_styles_after_theme_update( $upgrader_object, $options ) {
+		if ( empty( $options['type'] ) || 'theme' !== $options['type'] ) {
+			return;
+		}
+
+		if ( empty( $options['action'] ) || 'update' !== $options['action'] ) {
+			return;
+		}
+
+		if ( empty( $options['themes'] ) || ! is_array( $options['themes'] ) ) {
+			return;
+		}
+
+		$current_theme = get_stylesheet();
+		$parent_theme  = get_template();
+
+		if ( ! in_array( $current_theme, $options['themes'], true ) && ! in_array( $parent_theme, $options['themes'], true ) ) {
+			return;
+		}
+
+		$this->sync_global_styles();
+	}
+
+	/**
+	 * Sync Global Styles.
+	 */
+	private function sync_global_styles() {
+		$this->sync_global_colors();
+		$this->sync_global_fonts();
+		update_option( 'financio_global_styles_synced_version', FINANCIO_VERSION );
+	}
+
+	/**
+	 * Sync Global Colors.
+	 */
+	private function sync_global_colors() {
+		// Get the path to the current theme's theme.json file.
 		$theme_json_path = get_template_directory() . '/theme.json';
-		$theme_slug      = get_option( 'stylesheet' ); // Get the current theme's slug
+		$theme_slug      = get_option( 'stylesheet' ); // Get the current theme's slug.
 		$args            = array(
 			'post_type'      => 'wp_global_styles',
 			'post_status'    => 'publish',
@@ -88,11 +149,11 @@ class Init {
 		);
 
 		$global_styles_query = new WP_Query( $args );
-		// Check if the theme.json file exists
+		// Check if the theme.json file exists.
 		if ( file_exists( $theme_json_path ) && $global_styles_query->have_posts() ) {
 			$global_styles_query->the_post();
 			$global_styles_post_id = get_the_ID();
-			// Step 2: Get the existing global styles (color palette)
+			// Step 2: Get the existing global styles (color palette).
 			$global_styles_content = json_decode( get_post_field( 'post_content', $global_styles_post_id ), true );
 			if ( isset( $global_styles_content['settings']['color']['palette']['theme'] ) ) {
 				$existing_colors = $global_styles_content['settings']['color']['palette']['theme'];
@@ -100,47 +161,123 @@ class Init {
 				$existing_colors = array();
 			}
 
-			// Step 3: Extract slugs from the existing colors
+			// Step 3: Extract slugs from the existing colors.
 			$existing_slugs = array_column( $existing_colors, 'slug' );
-			// Step 4:Read the contents of the theme.json file
+			// Step 4:Read the contents of the theme.json file.
 
-			$theme_json_content = file_get_contents( $theme_json_path );
+			global $wp_filesystem;
+			if ( empty( $wp_filesystem ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
+			$theme_json_content = $wp_filesystem->get_contents( $theme_json_path );
 			$theme_json_data    = json_decode( $theme_json_content, true );
 
-			// Access the color palette from the theme.json file
+			// Access the color palette from the theme.json file.
 			if ( isset( $theme_json_data['settings']['color']['palette'] ) ) {
-
 				$theme_colors = $theme_json_data['settings']['color']['palette'];
+				$has_changes  = false;
 
-				// Step 5: Loop through theme.json colors and add them if they don't exist
+				// Step 5: Loop through theme.json colors and add them if they don't exist.
 				foreach ( $theme_colors as $theme_color ) {
-					if ( ! in_array( $theme_color['slug'], $existing_slugs ) ) {
-						$existing_colors[] = $theme_color; // Add new color to the existing palette
+					if ( ! empty( $theme_color['slug'] ) && ! in_array( $theme_color['slug'], $existing_slugs, true ) ) {
+						$existing_colors[] = $theme_color; // Add new color to the existing palette.
+						$existing_slugs[] = $theme_color['slug'];
+						$has_changes      = true;
 					}
 				}
-				foreach ( $theme_colors as $theme_color ) {
-					$theme_slug = $theme_color['slug'];
 
-					// Step 6: Use in_array to check if the slug already exists in the global palette
-					if ( ! in_array( $theme_slug, $existing_slugs ) ) {
-						// If the slug does not exist, add the theme color to the global palette
-						$global_colors[] = $theme_color;
-					}
+				if ( $has_changes ) {
+					// Step 6: Update the global styles content with the new colors.
+					$global_styles_content['settings']['color']['palette']['theme'] = $existing_colors;
+
+					// Step 7: Save the updated global styles back to the post.
+					wp_update_post(
+						array(
+							'ID'           => $global_styles_post_id,
+							'post_content' => wp_json_encode( $global_styles_content ),
+						)
+					);
 				}
-				// Step 6: Update the global styles content with the new colors
-				$global_styles_content['settings']['color']['palette']['theme'] = $existing_colors;
-
-				// Step 7: Save the updated global styles back to the post
-				wp_update_post(
-					array(
-						'ID'           => $global_styles_post_id,
-						'post_content' => wp_json_encode( $global_styles_content ),
-					)
-				);
-
 			}
-			wp_reset_postdata(); // Reset the query
+			wp_reset_postdata(); // Reset the query.
 		}
+	}
+
+	/**
+	 * Sync Global Fonts.
+	 */
+	private function sync_global_fonts() {
+		$theme_name    = get_stylesheet();
+		$option_name   = 'gutenverse-global-variable-font-' . $theme_name;
+		$default_fonts = $this->default_font_variable();
+		$global_fonts  = get_option( $option_name );
+
+		if ( ! is_array( $global_fonts ) ) {
+			update_option( $option_name, $default_fonts );
+
+			return;
+		}
+
+		$existing_keys = array();
+		$has_changes   = false;
+
+		foreach ( $global_fonts as $font ) {
+			$font_key = $this->get_font_sync_key( $font );
+
+			if ( $font_key ) {
+				$existing_keys[] = $font_key;
+			}
+		}
+
+		foreach ( $default_fonts as $font ) {
+			$font_key = $this->get_font_sync_key( $font );
+
+			if ( $font_key && in_array( $font_key, $existing_keys, true ) ) {
+				continue;
+			}
+
+			$global_fonts[] = $font;
+			$has_changes    = true;
+
+			if ( $font_key ) {
+				$existing_keys[] = $font_key;
+			}
+		}
+
+		if ( $has_changes ) {
+			update_option( $option_name, $global_fonts );
+		}
+	}
+
+	/**
+	 * Get font sync key.
+	 *
+	 * @param array $font Font item.
+	 *
+	 * @return string
+	 */
+	private function get_font_sync_key( $font ) {
+		if ( ! empty( $font['slug'] ) ) {
+			return (string) $font['slug'];
+		}
+
+		if ( ! empty( $font['id'] ) ) {
+			return (string) $font['id'];
+		}
+
+		if ( ! empty( $font['name'] ) ) {
+			return sanitize_title( $font['name'] );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Setup theme.
+	 */
+	public function setup_theme() {
+		load_theme_textdomain( 'financio', get_template_directory() . '/languages' );
 	}
 
 	/**
@@ -149,7 +286,7 @@ class Init {
 	 * @return string
 	 */
 	public function change_stylesheet_directory() {
-		return FINANCIO_DIR . 'gutenverse-files';
+		return FINANCIO_DIR . 'gutenverse-files/';
 	}
 
 	/**
@@ -157,7 +294,7 @@ class Init {
 	 */
 	public function init_instance() {
 		new Asset_Enqueue();
-		new Upgrader();
+		new Plugin_Notice();
 	}
 
 	/**
@@ -168,311 +305,6 @@ class Init {
 			update_user_meta( get_current_user_id(), 'gutenverse_install_notice', 'true' );
 		}
 		die;
-	}
-
-	/**
-	 * Show notification to install Gutenverse Plugin.
-	 */
-	public function notice_install_plugin() {
-		// Skip if gutenverse block activated.
-		if ( defined( 'GUTENVERSE' ) ) {
-			return;
-		}
-
-		// Skip if gutenverse pro activated.
-		if ( defined( 'GUTENVERSE_PRO' ) ) {
-			return;
-		}
-
-		$screen = get_current_screen();
-		if ( isset( $screen->parent_file ) && 'themes.php' === $screen->parent_file && 'appearance_page_financio-dashboard' === $screen->id ) {
-			return;
-		}
-
-		if ( isset( $screen->parent_file ) && 'plugins.php' === $screen->parent_file && 'update' === $screen->id ) {
-			return;
-		}
-
-		if ( 'true' === get_user_meta( get_current_user_id(), 'gutenverse_install_notice', true ) ) {
-			return;
-		}
-
-		$all_plugin = get_plugins();
-		$plugins    = $this->theme_config()['plugins'];
-		$actions    = array();
-
-		foreach ( $plugins as $plugin ) {
-			$slug   = $plugin['slug'];
-			$path   = "$slug/$slug.php";
-			$active = is_plugin_active( $path );
-
-			if ( isset( $all_plugin[ $path ] ) ) {
-				if ( $active ) {
-					$actions[ $slug ] = 'active';
-				} else {
-					$actions[ $slug ] = 'inactive';
-				}
-			} else {
-				$actions[ $slug ] = '';
-			}
-		}
-
-		?>
-		<style>
-			.install-gutenverse-plugin-notice {
-				border: 1px solid #E6E6EF;
-				position: relative;
-				overflow: hidden;
-				padding: 0 !important;
-				margin-bottom: 30px !important;
-				background: url( <?php echo esc_url( FINANCIO_URI . '/assets/img/background-banner.png' ); ?> );
-				background-size: cover;
-				background-position: center;
-			}
-
-			.install-gutenverse-plugin-notice .gutenverse-notice-content {
-				display: flex;
-				align-items: center;
-				position: relative;
-			}
-
-			.gutenverse-notice-text, .gutenverse-notice-image {
-				width: 50%;
-			}
-
-			.gutenverse-notice-text {
-				padding: 40px 0 40px 40px;
-				position: relative;
-				z-index: 2;
-			}
-
-			.install-gutenverse-plugin-notice img {
-				max-height: 100%;
-				display: flex;
-				position: absolute;
-				top: 0;
-				right: 0;
-				bottom: 0;
-			}
-
-			.install-gutenverse-plugin-notice:after {
-				content: "";
-				position: absolute;
-				left: 0;
-				top: 0;
-				height: 100%;
-				width: 5px;
-				display: block;
-				background: linear-gradient(to bottom, #68E4F4, #4569FF, #F045FF);
-			}
-
-			.install-gutenverse-plugin-notice .notice-dismiss {
-				top: 20px;
-				right: 20px;
-				padding: 0;
-				background: white;
-				border-radius: 6px;
-			}
-
-			.install-gutenverse-plugin-notice .notice-dismiss:before {
-				content: "\f335";
-				font-size: 17px;
-				width: 25px;
-				height: 25px;
-				line-height: 25px;
-				border: 1px solid #E6E6EF;
-				border-radius: 3px;
-			}
-
-			.install-gutenverse-plugin-notice h3 {
-				margin-top: 5px;
-				margin-bottom: 15px;
-				font-weight: 600;
-				font-size: 25px;
-				line-height: 1.4em;
-			}
-
-			.install-gutenverse-plugin-notice h3 span {
-				font-weight: 700;
-				background-clip: text !important;
-				-webkit-text-fill-color: transparent;
-				background: linear-gradient(80deg, rgba(208, 77, 255, 1) 0%,rgba(69, 105, 255, 1) 48.8%,rgba(104, 228, 244, 1) 100%);
-			}
-
-			.install-gutenverse-plugin-notice p {
-				font-size: 13px;
-				font-weight: 400;
-				margin: 5px 100px 20px 0 !important;
-			}
-
-			.install-gutenverse-plugin-notice .gutenverse-bottom {
-				display: flex;
-				align-items: center;
-				margin-top: 30px;
-			}
-
-			.install-gutenverse-plugin-notice a {
-				text-decoration: none;
-				margin-right: 20px;
-			}
-
-			.install-gutenverse-plugin-notice a.gutenverse-button {
-				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", serif;
-				text-decoration: none;
-				cursor: pointer;
-				font-size: 12px;
-				line-height: 18px;
-				border-radius: 5px;
-				background: #3B57F7;
-				color: #fff;
-				padding: 10px 15px;
-				font-weight: 500;
-				background: linear-gradient(to left, #68E4F4, #4569FF, #F045FF);
-				transition: transform 0.5s ease, color 0.5s ease;
-			}
-
-			.install-gutenverse-plugin-notice a.gutenverse-button:hover {
-				color: hsla(0, 0%, 100%, .749);
-				transform: scale(.94);
-			}
-
-			#gutenverse-install-plugin.loader:after {
-				display: block;
-				content: '';
-				border: 5px solid white;
-				border-radius: 50%;
-				border-top: 5px solid rgba(255, 255, 255, 0);
-				width: 10px;
-				height: 10px;
-				-webkit-animation: spin 2s linear infinite;
-				animation: spin 2s linear infinite;
-			}
-
-			@-webkit-keyframes spin {
-				0% {
-					-webkit-transform: rotate(0deg);
-				}
-				100% {
-					-webkit-transform: rotate(360deg);
-				}
-			}
-
-			@keyframes spin {
-				0% {
-					transform: rotate(0deg);
-				}
-				100% {
-					transform: rotate(360deg);
-				}
-			}
-
-			@media screen and (max-width: 1024px) {
-				.gutenverse-notice-text {
-					width: 100%;
-				}
-
-				.gutenverse-notice-image {
-					display: none;
-				}
-			}
-		</style>
-		<script>
-		var promises = [];
-		var actions = <?php echo wp_json_encode( $actions ); ?>;
-
-		function sequenceInstall (plugins, index = 0) {
-			if (plugins[index]) {
-				var plugin = plugins[index];
-
-				switch (actions[plugin?.slug]) {
-					case 'active':
-						break;
-					case 'inactive':
-						var path = plugin?.slug + '/' + plugin?.slug;
-						promises.push(
-							wp.apiFetch({
-								path: 'wp/v2/plugins/plugin?plugin=' + path,									
-								method: 'POST',
-								data: {
-									status: 'active'
-								}
-							}).then(() => {
-								sequenceInstall(plugins, index + 1);
-							}).catch((error) => {
-							})
-						);
-						break;
-					default:
-						promises.push(
-							wp.apiFetch({
-								path: 'wp/v2/plugins',
-								method: 'POST',
-								data: {
-									slug: plugin?.slug,
-									status: 'active'
-								}
-							}).then(() => {
-								sequenceInstall(plugins, index + 1);
-							}).catch((error) => {
-							})
-						);
-						break;
-				}
-			}
-
-			return;
-		};
-
-		jQuery( function( $ ) {
-			$( 'div.notice.install-gutenverse-plugin-notice' ).on( 'click', 'button.notice-dismiss', function( event ) {
-				event.preventDefault();
-				$.post( ajaxurl, {
-					action: '{{slug}}_set_admin_notice_viewed',
-					nonce: '<?php echo esc_html( wp_create_nonce( '{{slug}}_admin_notice' ) ); ?>',
-				} );
-			} );
-
-			$('#gutenverse-install-plugin').on('click', function(e) {
-				var hasFinishClass = $(this).hasClass('finished');
-				var hasLoaderClass = $(this).hasClass('loader');
-
-				if(!hasFinishClass) {
-					e.preventDefault();
-				}
-
-				if(!hasLoaderClass && !hasFinishClass) {
-					promises = [];
-					var plugins = <?php echo wp_json_encode( $plugins ); ?>;
-					$(this).addClass('loader').text('');
-
-					sequenceInstall(plugins);
-					Promise.all(promises).then(() => {						
-						window.location.reload();
-						$(this).removeClass('loader').addClass('finished').text('Visit Theme Dashboard');
-					});
-				}
-			});
-		} );
-		</script>
-		<div class="notice is-dismissible install-gutenverse-plugin-notice">
-			<div class="gutenverse-notice-inner">
-				<div class="gutenverse-notice-content">
-					<div class="gutenverse-notice-text">
-						<h3><?php esc_html_e( 'Take Your Website To New Height with', 'financio' ); ?> <span>Gutenverse!</span></h3> 
-						<p><?php esc_html_e( 'Financio theme work best with Gutenverse plugin. By installing Gutenverse plugin you may access Financio templates built with Gutenverse and get access to more than 40 free blocks, hundred free Layout and Section.', 'financio' ); ?></p>
-						<div class="gutenverse-bottom">
-							<a class="gutenverse-button" id="gutenverse-install-plugin" href="<?php echo esc_url( wp_nonce_url( self_admin_url( 'themes.php?page=financio-dashboard' ), 'install-plugin_gutenverse' ) ); ?>">
-								<?php echo esc_html( __( 'Install Required Plugins', 'financio' ) ); ?>
-							</a>
-						</div>
-					</div>
-					<div class="gutenverse-notice-image">
-						<img src="<?php echo esc_url( FINANCIO_URI . '/assets/img/banner-install-gutenverse-2.png' ); ?>"/>
-					</div>
-				</div>
-			</div>
-		</div>
-		<?php
 	}
 
 	/**
@@ -538,10 +370,10 @@ class Init {
 				$result = array();
 				$array1 = $config['globalVariable']['fonts'];
 				$array2 = $this->default_font_variable();
-				foreach ( $array1 as $item ) {
+				foreach ( $array2 as $item ) { // default font.
 					$result[ $item['id'] ] = $item;
 				}
-				foreach ( $array2 as $item ) {
+				foreach ( $array1 as $item ) { // overwrite fonts.
 					$result[ $item['id'] ] = $item;
 				}
 				$fonts = array();
@@ -566,7 +398,7 @@ class Init {
 		return array(
             array (
   'id' => 'h1-font',
-  'name' => 'H1 Font',
+  'name' => 'H1 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -600,7 +432,7 @@ class Init {
   ),
 ),array (
   'id' => 'h2-font',
-  'name' => 'H2 Font',
+  'name' => 'H2 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -634,7 +466,7 @@ class Init {
   ),
 ),array (
   'id' => 'h2-hero-font',
-  'name' => 'H2 Hero Font',
+  'name' => 'H2 Hero Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -668,7 +500,7 @@ class Init {
   ),
 ),array (
   'id' => 'h3-font',
-  'name' => 'H3 Font',
+  'name' => 'H3 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -702,7 +534,7 @@ class Init {
   ),
 ),array (
   'id' => 'h3-alt-font',
-  'name' => 'H3 Alt Font',
+  'name' => 'H3 Alt Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -736,7 +568,7 @@ class Init {
   ),
 ),array (
   'id' => 'h4-font',
-  'name' => 'H4 Font',
+  'name' => 'H4 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -770,7 +602,7 @@ class Init {
   ),
 ),array (
   'id' => 'h5-font',
-  'name' => 'H5 Font',
+  'name' => 'H5 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -804,7 +636,7 @@ class Init {
   ),
 ),array (
   'id' => 'h6-font',
-  'name' => 'H6 Font',
+  'name' => 'H6 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -833,7 +665,7 @@ class Init {
   ),
 ),array (
   'id' => 'body-font',
-  'name' => 'Body Text Font',
+  'name' => 'Body Text Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -867,7 +699,7 @@ class Init {
   ),
 ),array (
   'id' => 'button-font',
-  'name' => 'Button Font',
+  'name' => 'Button Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -896,7 +728,7 @@ class Init {
   ),
 ),array (
   'id' => 'button-2-font',
-  'name' => 'Button 2 Font',
+  'name' => 'Button 2 Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -925,7 +757,7 @@ class Init {
   ),
 ),array (
   'id' => 'comment-font',
-  'name' => 'Comment Font',
+  'name' => 'Comment Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -959,7 +791,7 @@ class Init {
   ),
 ),array (
   'id' => 'nav-menu-font',
-  'name' => 'Nav Menu Font',
+  'name' => 'Nav Menu Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -988,7 +820,7 @@ class Init {
   ),
 ),array (
   'id' => 'testimonial-font',
-  'name' => 'Testimonial Font',
+  'name' => 'Testimonial Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -1023,7 +855,7 @@ class Init {
   ),
 ),array (
   'id' => 'meta-font',
-  'name' => 'Meta Font',
+  'name' => 'Meta Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -1052,7 +884,7 @@ class Init {
   ),
 ),array (
   'id' => 'italic-font',
-  'name' => 'Italic Font',
+  'name' => 'Italic Font (Legacy)',
   'font' => 
   array (
     'font' => 
@@ -1086,15 +918,21 @@ class Init {
     'weight' => '400',
   ),
 ),array (
-  'id' => 'h1-font',
-  'name' => 'H1 Font',
+  'id' => 'gv-font-primary',
+  'name' => 'Primary',
   'font' => 
   array (
-    'font' => 
+    'lineHeight' => 
     array (
-      'label' => 'Poppins',
-      'value' => 'Poppins',
-      'type' => 'google',
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.2',
+      ),
+      'Mobile' => 
+      array (
+        'unit' => 'px',
+      ),
     ),
     'size' => 
     array (
@@ -1109,19 +947,17 @@ class Init {
         'point' => '32',
       ),
     ),
-    'lineHeight' => 
+    'font' => 
     array (
-      'Desktop' => 
-      array (
-        'unit' => 'em',
-        'point' => '1.2',
-      ),
+      'label' => 'Poppins',
+      'value' => 'Poppins',
+      'type' => 'google',
     ),
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h2-font',
-  'name' => 'H2 Font',
+  'id' => 'gv-font-secondary',
+  'name' => 'Secondary',
   'font' => 
   array (
     'font' => 
@@ -1154,42 +990,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h2-hero-font',
-  'name' => 'H2 Hero Font',
-  'font' => 
-  array (
-    'font' => 
-    array (
-      'label' => 'Poppins',
-      'value' => 'Poppins',
-      'type' => 'google',
-    ),
-    'size' => 
-    array (
-      'Desktop' => 
-      array (
-        'unit' => 'px',
-        'point' => '40',
-      ),
-      'Mobile' => 
-      array (
-        'unit' => 'px',
-        'point' => '30',
-      ),
-    ),
-    'lineHeight' => 
-    array (
-      'Desktop' => 
-      array (
-        'unit' => 'em',
-        'point' => '1.2',
-      ),
-    ),
-    'weight' => '500',
-  ),
-),array (
-  'id' => 'h3-font',
-  'name' => 'H3 Font',
+  'id' => 'gv-font-feature',
+  'name' => 'Feature',
   'font' => 
   array (
     'font' => 
@@ -1222,8 +1024,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h3-alt-font',
-  'name' => 'H3 Alt Font',
+  'id' => 'gv-font-feature-secondary',
+  'name' => 'Feature Secondary',
   'font' => 
   array (
     'font' => 
@@ -1256,8 +1058,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h4-font',
-  'name' => 'H4 Font',
+  'id' => 'gv-font-meta',
+  'name' => 'Meta',
   'font' => 
   array (
     'font' => 
@@ -1290,8 +1092,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h5-font',
-  'name' => 'H5 Font',
+  'id' => 'gv-font-subheading',
+  'name' => 'Subheading',
   'font' => 
   array (
     'font' => 
@@ -1324,8 +1126,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'h6-font',
-  'name' => 'H6 Font',
+  'id' => 'gv-font-meta-secondary',
+  'name' => 'Meta Secondary',
   'font' => 
   array (
     'font' => 
@@ -1339,7 +1141,7 @@ class Init {
       'Desktop' => 
       array (
         'unit' => 'px',
-        'point' => '16',
+        'point' => '14',
       ),
     ),
     'lineHeight' => 
@@ -1347,14 +1149,43 @@ class Init {
       'Desktop' => 
       array (
         'unit' => 'em',
-        'point' => '1.3',
+        'point' => '1.5',
       ),
     ),
     'weight' => '400',
   ),
 ),array (
-  'id' => 'body-font',
-  'name' => 'Body Text Font',
+  'id' => 'gv-font-text-hero',
+  'name' => 'Text Hero',
+  'font' => 
+  array (
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.6',
+      ),
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '18',
+      ),
+    ),
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'weight' => '800',
+  ),
+),array (
+  'id' => 'gv-font-text',
+  'name' => 'Text',
   'font' => 
   array (
     'font' => 
@@ -1387,8 +1218,37 @@ class Init {
     'weight' => '400',
   ),
 ),array (
-  'id' => 'button-font',
-  'name' => 'Button Font',
+  'id' => 'gv-font-text-small',
+  'name' => 'Text Small',
+  'font' => 
+  array (
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.7',
+      ),
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'font' => 
+    array (
+      'label' => 'Heebo',
+      'value' => 'Heebo',
+      'type' => 'google',
+    ),
+    'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-button-primary',
+  'name' => 'Button Primary',
   'font' => 
   array (
     'font' => 
@@ -1416,8 +1276,8 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'button-2-font',
-  'name' => 'Button 2 Font',
+  'id' => 'gv-font-button-secondary',
+  'name' => 'Button Secondary',
   'font' => 
   array (
     'font' => 
@@ -1445,7 +1305,36 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'comment-font',
+  'id' => 'gv-font-form-label',
+  'name' => 'Form Label',
+  'font' => 
+  array (
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1.3',
+      ),
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '14',
+      ),
+    ),
+    'font' => 
+    array (
+      'label' => 'Poppins',
+      'value' => 'Poppins',
+      'type' => 'google',
+    ),
+    'weight' => '500',
+  ),
+),array (
+  'id' => 'gv-font-comment',
   'name' => 'Comment Font',
   'font' => 
   array (
@@ -1479,7 +1368,7 @@ class Init {
     'weight' => '500',
   ),
 ),array (
-  'id' => 'nav-menu-font',
+  'id' => 'gv-font-nav',
   'name' => 'Nav Menu Font',
   'font' => 
   array (
@@ -1508,7 +1397,7 @@ class Init {
     'weight' => '400',
   ),
 ),array (
-  'id' => 'testimonial-font',
+  'id' => 'gv-font-testimonial',
   'name' => 'Testimonial Font',
   'font' => 
   array (
@@ -1543,36 +1432,7 @@ class Init {
     'weight' => '400',
   ),
 ),array (
-  'id' => 'meta-font',
-  'name' => 'Meta Font',
-  'font' => 
-  array (
-    'font' => 
-    array (
-      'label' => 'Heebo',
-      'value' => 'Heebo',
-      'type' => 'google',
-    ),
-    'size' => 
-    array (
-      'Desktop' => 
-      array (
-        'unit' => 'px',
-        'point' => '14',
-      ),
-    ),
-    'lineHeight' => 
-    array (
-      'Desktop' => 
-      array (
-        'unit' => 'em',
-        'point' => '1.7',
-      ),
-    ),
-    'weight' => '400',
-  ),
-),array (
-  'id' => 'italic-font',
+  'id' => 'gv-font-italic',
   'name' => 'Italic Font',
   'font' => 
   array (
@@ -1605,6 +1465,35 @@ class Init {
     ),
     'style' => 'italic',
     'weight' => '400',
+  ),
+),array (
+  'id' => 'gv-font-heading-404',
+  'name' => 'Heading 404',
+  'font' => 
+  array (
+    'lineHeight' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'em',
+        'point' => '1',
+      ),
+    ),
+    'size' => 
+    array (
+      'Desktop' => 
+      array (
+        'unit' => 'px',
+        'point' => '168',
+      ),
+    ),
+    'font' => 
+    array (
+      'label' => 'Poppins',
+      'value' => 'Poppins',
+      'type' => 'google',
+    ),
+    'weight' => '600',
   ),
 ),
 		);
@@ -1624,19 +1513,14 @@ class Init {
 		if ( 'wp_template' === $template_type ) {
 			$new_templates = array(
 				'404',
-				'about',
 				'archive',
 				'blank-canvas',
-				'blog',
-				'contact',
-				'faq',
-				'front-page',
 				'index',
 				'page',
 				'search',
-				'service',
 				'single',
-				'template-basic'
+				'home',
+				'full-width'
 			);
 
 			foreach ( $new_templates as $template ) {
@@ -1645,6 +1529,7 @@ class Init {
 					'path'  => $this->change_stylesheet_directory() . "/templates/{$template}.html",
 					'theme' => get_template(),
 					'type'  => 'wp_template',
+					'title' => ucfirst( str_replace( '-', ' ', $template ) ),
 				);
 			}
 		}
@@ -1664,37 +1549,27 @@ class Init {
 	public function template_path( $template_file, $theme_slug, $template_slug ) {
 		switch ( $template_slug ) {
             case 'footer':
-					return $this->change_stylesheet_directory() . 'parts/footer.html';
+					return $this->change_stylesheet_directory() . '/parts/footer.html';
 			case 'header':
-					return $this->change_stylesheet_directory() . 'parts/header.html';
+					return $this->change_stylesheet_directory() . '/parts/header.html';
 			case '404':
-					return $this->change_stylesheet_directory() . 'templates/404.html';
-			case 'about':
-					return $this->change_stylesheet_directory() . 'templates/about.html';
+					return $this->change_stylesheet_directory() . '/templates/404.html';
 			case 'archive':
-					return $this->change_stylesheet_directory() . 'templates/archive.html';
+					return $this->change_stylesheet_directory() . '/templates/archive.html';
 			case 'blank-canvas':
-					return $this->change_stylesheet_directory() . 'templates/blank-canvas.html';
-			case 'blog':
-					return $this->change_stylesheet_directory() . 'templates/blog.html';
-			case 'contact':
-					return $this->change_stylesheet_directory() . 'templates/contact.html';
-			case 'faq':
-					return $this->change_stylesheet_directory() . 'templates/faq.html';
-			case 'front-page':
-					return $this->change_stylesheet_directory() . 'templates/front-page.html';
+					return $this->change_stylesheet_directory() . '/templates/blank-canvas.html';
 			case 'index':
-					return $this->change_stylesheet_directory() . 'templates/index.html';
+					return $this->change_stylesheet_directory() . '/templates/index.html';
 			case 'page':
-					return $this->change_stylesheet_directory() . 'templates/page.html';
+					return $this->change_stylesheet_directory() . '/templates/page.html';
 			case 'search':
-					return $this->change_stylesheet_directory() . 'templates/search.html';
-			case 'service':
-					return $this->change_stylesheet_directory() . 'templates/service.html';
+					return $this->change_stylesheet_directory() . '/templates/search.html';
 			case 'single':
-					return $this->change_stylesheet_directory() . 'templates/single.html';
-			case 'template-basic':
-					return $this->change_stylesheet_directory() . 'templates/template-basic.html';
+					return $this->change_stylesheet_directory() . '/templates/single.html';
+			case 'home':
+					return $this->change_stylesheet_directory() . '/templates/home.html';
+			case 'full-width':
+					return $this->change_stylesheet_directory() . '/templates/full-width.html';
 		}
 
 		return $template_file;
@@ -1709,30 +1584,46 @@ class Init {
 
 	/**
 	 * Enqueue scripts and styles.
+	 *
+	 * @param string $hook_suffix Hook suffix.
 	 */
-	public function dashboard_scripts() {
-		$screen = get_current_screen();
-		wp_enqueue_script('wp-api-fetch');
-
+	public function dashboard_scripts( $hook_suffix ) {
+		
+					if ( 'appearance_page_financio-dashboard' !== $hook_suffix && 'admin_page_gutenverse-onboarding-wizard' !== $hook_suffix ) {
+						return;
+					}
+		
 		if ( is_admin() ) {
 			// enqueue css.
-			wp_enqueue_style(
-				'financio-dashboard',
-				FINANCIO_URI . '/assets/css/theme-dashboard.css',
-				array(),
-				FINANCIO_VERSION
-			);
+			
+						wp_enqueue_style(
+							'financio-dashboard',
+							get_template_directory_uri() . '/assets/css/theme-dashboard.css',
+							array(),
+							FINANCIO_VERSION
+						);
+					
+		$dashboard_includes = include get_template_directory() . '/assets/dependencies/theme-dashboard.asset.php';
+		
+						wp_enqueue_script(
+							'financio-dashboard',
+							get_template_directory_uri() . '/assets/js/theme-dashboard.js',
+							$dashboard_includes["dependencies"],
+							FINANCIO_VERSION,
+							true
+						);
+					
+		
+					wp_enqueue_style(
+						'financio-dashboard-inter-font',
+						get_template_directory_uri() . '/assets/fonts/inter/inter.css',
+						[],
+						null
+					);
 
-			// enqueue js.
-			wp_enqueue_script(
-				'financio-dashboard',
-				FINANCIO_URI . '/assets/js/theme-dashboard.js',
-				array( 'wp-api-fetch' ),
-				FINANCIO_VERSION,
-				true
-			);
+			wp_enqueue_script('wp-api-fetch');
 
-			wp_localize_script( 'financio-dashboard', 'GutenThemeConfig', $this->theme_config() );
+			wp_localize_script( 'wp-api-fetch', 'GutenThemeConfig', $this->theme_config() );
 		}
 	}
 
@@ -1760,73 +1651,112 @@ class Init {
 	 * Register static data to be used in theme's js file
 	 */
 	public function theme_config() {
+		global $pagenow;
+		include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 		$active_plugins = get_option( 'active_plugins' );
 		$plugins = array();
-		foreach( $active_plugins as $active ) {
-			$plugins[] = explode( '/', $active)[0];
+		$installed_plugins = get_plugins();
+		$installed_plugin_versions = array();
+		foreach ( $active_plugins as $active ) {
+			$plugin_name = explode( '/', $active )[0];
+			$plugins[]   = $plugin_name;
+			$installed_plugin_versions[ $plugin_name ] = isset( $installed_plugins[ $active ] ) ? $installed_plugins[ $active ]['Version'] : '1.0.0';
 		}
 
 		$config = array(
-			'home_url'     => home_url(),
-			'version'      => FINANCIO_VERSION,
-			'images'       => FINANCIO_URI . '/assets/img/',
-			'title'        => esc_html__( 'Financio', 'financio' ),
-			'description'  => esc_html__( 'Financio is a simple, responsive, and professional looking theme template for WordPress fullsite editing and fully compatible with Gutenverse plugin. Financio’s templates is built with layout/design that suit for Financial Service, Finance Company, Financial Advisor, Accountant, Insurance, Consulting Business or any other related business. The templates includes both core version and Gutenverse plugin version, also has core and Gutenverse block patterns ready so you can start mix and match your template parts as you desire. The templates is built ready so you don’t need to build it from scratch. We want to make your experience using WordPress fullsite editor more convenient.', 'financio' ),
-			'pluginTitle'  => esc_html__( 'Plugin Requirement', 'financio' ),
-			'pluginDesc'   => esc_html__( 'This theme require some plugins. Please make sure all the plugin below are installed and activated.', 'financio' ),
-			'note'         => esc_html__( '', 'financio' ),
-			'note2'        => esc_html__( '', 'financio' ),
-			'demo'         => esc_html__( '', 'financio' ),
-			'demoUrl'      => esc_url( 'https://gutenverse.com/demo?name=financio' ),
-			'install'      => '',
-			'installText'  => esc_html__( 'Install Gutenverse Plugin', 'financio' ),
-			'activateText' => esc_html__( 'Activate Gutenverse Plugin', 'financio' ),
-			'doneText'     => esc_html__( 'Gutenverse Plugin Installed', 'financio' ),
-			'dashboardPage'=> admin_url( 'themes.php?page=financio-dashboard' ),
-			'logo'         => false,
-			'slug'         => 'financio',
-			'upgradePro'   => 'https://gutenverse.com/pro',
-			'supportLink'  => 'https://support.jegtheme.com/forums/forum/fse-themes/',
-			'libraryApi'   => 'https://gutenverse.com//wp-json/gutenverse-server/v1',
-			'docsLink'     => 'https://support.jegtheme.com/theme/fse-themes/',
-			'pages'        => array(
-				'page-0' => FINANCIO_URI . 'assets/img/ss-financio-home.webp',
-				'page-1' => FINANCIO_URI . 'assets/img/ss-financio-about.webp',
-				'page-2' => FINANCIO_URI . 'assets/img/ss-financio-services.webp',
-				'page-3' => FINANCIO_URI . 'assets/img/ss-financio-faq.webp',
-				'page-4' => FINANCIO_URI . 'assets/img/ss-financio-contact.webp'
+			'home_url'      => home_url(),
+			'active_plugins'=> $active_plugins,
+			'version'       => FINANCIO_VERSION,
+			'images'        => get_template_directory_uri() . '/assets/img/',
+			'title'         => esc_html__( 'Financio', 'financio' ),
+			'description'   => esc_html__( 'Financio is a Finance Company, Financial Advisor WordPress Block Theme designed for professionals and businesses that want to build a trustworthy and modern financial website. Built with full site editing and powered by Gutenverse, this theme offers a flexible and clean platform to present financial services, investment solutions, and business expertise with a professional layout. Whether you run a finance company or offer advisory services, Financio helps you communicate your value with clarity and credibility. It is ideal for financial advisors, investment firms, accounting services, consulting agencies, and fintech startups looking to establish a strong online presence. With responsive layouts, customizable block patterns, and well-structured pages, you can easily highlight services, case studies, team profiles, and client testimonials. Optimized for performance and usability, Financio enables you to create a reliable website that reflects your brand and expertise in Finance Company, Financial Advisor services. If you are looking for a scalable and professional solution, Financio is a dependable Finance Company, Financial Advisor WordPress theme to grow your financial business online.', 'financio' ),
+			'pluginTitle'   => esc_html__( 'Plugin Requirement', 'financio' ),
+			'pluginDesc'    => esc_html__( 'This theme require some plugins. Please make sure all the plugin below are installed and activated.', 'financio' ),
+			'note'          => '',
+			'note2'         => '',
+			'demo'          => '',
+			'demoUrl'       => esc_url( 'https://gutenverse.com/demo?name=financio' ),
+			'install'       => '',
+			'installText'   => esc_html__( 'Install Gutenverse Plugin', 'financio' ),
+			'activateText'  => esc_html__( 'Activate Gutenverse Plugin', 'financio' ),
+			'doneText'      => esc_html__( 'Gutenverse Plugin Installed', 'financio' ),
+			'dashboardPage' => admin_url( 'themes.php?page=financio-dashboard' ),
+			'logo'          => trailingslashit( get_template_directory_uri() ) . 'assets/img/logo-financio.webp',
+			'slug'          => 'financio',
+			'upgradePro'    => esc_url( 'https://gutenverse.com/pricing' ),
+			'supportLink'   => esc_url( 'https://wordpress.org/support/theme/financio/' ),
+			'libraryApi'    => esc_url( 'https://gutenverse.com//wp-json/gutenverse-server/v1' ),
+			'docsLink'      => esc_url( 'https://gutenverse.com/docs/ ' ),
+			'pages'         => array(
+				
 			),
-			'plugins'      => array(
+			'plugins'       => array(
 				array(
-					'slug'       => 'gutenverse',
-					'title'      => 'Gutenverse',
-					'short_desc' => 'GUTENVERSE – GUTENBERG BLOCKS AND WEBSITE BUILDER FOR SITE EDITOR, TEMPLATE LIBRARY, POPUP BUILDER, ADVANCED ANIMATION EFFECTS, 45+ FREE USER-FRIENDLY BLOCKS',
-					'active'     => in_array( 'gutenverse', $plugins, true ),
-					'installed'  => $this->is_installed( 'gutenverse' ),
-					'icons'      => array (
+					'slug'       		=> 'gutenverse',
+					'title'      		=> esc_html__( 'Gutenverse', 'financio' ),
+					'short_desc' 		=> esc_html__( 'Gutenverse is a WordPress blocks plugin, page builder, and website builder for the native Block Editor and Site Editor. Create fast, responsive websites without code using 57 blocks, 600+ templates, global styles, responsive controls, popup builder tools, and block theme support.', 'financio' ),
+					'active'    		=> in_array( 'gutenverse', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse' ),
+					'req_version'    	=> '3.6.0',
+					'installed_version' => isset( $installed_plugins['gutenverse/gutenverse.php']['Version'] ) ? $installed_plugins['gutenverse/gutenverse.php']['Version'] : '',
+					'icons'      		=> array (
   '1x' => 'https://ps.w.org/gutenverse/assets/icon-128x128.gif?rev=3132408',
   '2x' => 'https://ps.w.org/gutenverse/assets/icon-256x256.gif?rev=3132408',
 ),
+					'download_url'      => '',
 				),
 				array(
-					'slug'       => 'gutenverse-form',
-					'title'      => 'Gutenverse Form',
-					'short_desc' => 'GUTENVERSE FORM – FORM BUILDER FOR GUTENBERG BLOCK EDITOR, MULTI-STEP FORMS, CONDITIONAL LOGIC, PAYMENT, CALCULATION, 15+ FREE USER-FRIENDLY FORM BLOCKS',
-					'active'     => in_array( 'gutenverse-form', $plugins, true ),
-					'installed'  => $this->is_installed( 'gutenverse-form' ),
-					'icons'      => array (
+					'slug'       		=> 'gutenverse-form',
+					'title'      		=> esc_html__( 'Gutenverse Form', 'financio' ),
+					'short_desc' 		=> esc_html__( 'Gutenverse Form is a WordPress form plugin, contact form builder, block form plugin, and booking form builder for the native Block Editor. Create contact forms, booking forms, reservation forms, subscribe forms, lead forms, feedback forms, and custom WordPress forms without code.', 'financio' ),
+					'active'    		=> in_array( 'gutenverse-form', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse-form' ),
+					'req_version'    	=> '2.6.0',
+					'installed_version' => isset( $installed_plugins['gutenverse-form/gutenverse-form.php']['Version'] ) ? $installed_plugins['gutenverse-form/gutenverse-form.php']['Version'] : '',
+					'icons'      		=> array (
   '1x' => 'https://ps.w.org/gutenverse-form/assets/icon-128x128.png?rev=3135966',
 ),
+					'download_url'      => '',
+				),
+				array(
+					'slug'       		=> 'gutenverse-companion',
+					'title'      		=> esc_html__( 'Gutenverse Companion', 'financio' ),
+					'short_desc' 		=> esc_html__( 'A companion plugin designed specifically to enhance and extend the functionality of Gutenverse base themes. This plugin integrates seamlessly with the base themes, providing additional features, customization options, and advanced tools to optimize the overall user experience and streamline the development process.', 'financio' ),
+					'active'    		=> in_array( 'gutenverse-companion', $plugins, true ),
+					'installed'  		=> $this->is_installed( 'gutenverse-companion' ),
+					'req_version'    	=> '2.3.3',
+					'installed_version' => isset( $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] ) ? $installed_plugins['gutenverse-companion/gutenverse-companion.php']['Version'] : '',
+					'icons'      		=> array (
+  '1x' => 'https://ps.w.org/gutenverse-companion/assets/icon-128x128.png?rev=3162415',
+),
+					'download_url'      => '',
 				)
 			),
-			'assign'       => array(
+			'assign'        => array(
 				
 			),
-			'dashboardData'=> array(
-				
+			'dashboardData' => array(
+				'lite_block_count' => 40,
+'plus_block_count' => 80,
+'lite_page_count' => 0,
+'plus_page_count' => 6,
+'plus_template_count' => 10,
+'plus_pattern_count' => 30,
+'lite_pattern_count' => 13,
+'lite_template_count' => 10
 			),
-			
+			'lite_plus_type' => 'wporg',
+			'pro_preview' => trailingslashit( get_template_directory_uri() ) . 'assets/img/ss-financio-pro.webp',
+			'pro_title' => esc_html__('Financio PRO', 'financio'),
+			'upgrade_required_license' => array('professional','agency','enterprise','ultimate'),
 		);
+
+		if ( 'themes.php' === $pagenow && isset( $_GET['page'] ) && 'financio-dashboard' === sanitize_key( wp_unslash( $_GET['page'] ) ) ) {
+			$admin_config = array(
+				'system' => $this->system_status(),
+			);
+			$config = array_merge( $config, $admin_config );
+		}
 
 		if ( isset( $config['assign'] ) && $config['assign'] ) {
 			$assign = $config['assign'];
@@ -1862,28 +1792,136 @@ class Init {
 
 		return $config;
 	}
+	
+						/**
+						 * System Status.
+						 *
+						 * @return array
+						 */
+						public function system_status() {
+							$status      = array();
+							$active_demo = get_option( 'gutenverse_companion_template_options' );
+							/** Themes */
+							$theme                    = wp_get_theme();
+							$parent                   = wp_get_theme( get_template() );
+							$status['theme_name']     = $theme->get( 'Name' );
+							$status['theme_version']  = $theme->get( 'Version' );
+							$status['is_child_theme'] = is_child_theme();
+							$status['parent_theme']   = $parent->get( 'Name' );
+							$status['parent_version'] = $parent->get( 'Version' );
 
-	/**
-	 * Add Menu
-	 */
-	public function admin_menu() {
-		add_theme_page(
-			'Financio Dashboard',
-			'Financio Dashboard',
-			'manage_options',
-			'financio-dashboard',
-			array( $this, 'load_dashboard' ),
-			1
-		);
-	}
+							$status['active_companion_demo'] = $active_demo['active_demo'] ?? esc_html__( 'You don\'t have any demo activated', 'financio' );
 
-	/**
-	 * Template page
-	 */
-	public function load_dashboard() {
-		?>
-			<div id="gutenverse-theme-dashboard">
-			</div>
-		<?php
-	}
+							/** WordPress Environment */
+							$wp_upload_dir              = wp_upload_dir();
+							$status['home_url']         = home_url( '/' );
+							$status['site_url']         = site_url();
+							$status['login_url']        = wp_login_url();
+							$status['wp_version']       = get_bloginfo( 'version', 'display' );
+							$status['is_multisite']     = is_multisite();
+							$status['wp_debug']         = defined( 'WP_DEBUG' ) && WP_DEBUG;
+							$status['memory_limit']     = ini_get( 'memory_limit' );
+							$status['wp_memory_limit']  = WP_MEMORY_LIMIT;
+							$status['wp_language']      = get_locale();
+							$status['writeable_upload'] = wp_is_writable( $wp_upload_dir['basedir'] );
+							$status['count_category']   = wp_count_terms( 'category' );
+							$status['count_tag']        = wp_count_terms( 'post_tag' );
+
+							/** Server Environment */
+							$remote = get_transient( 'gutenverse_wp_remote_get_status_cache' );
+							if ( ! $remote ) {
+								$remote = wp_remote_get( home_url() );
+								set_transient( 'gutenverse_wp_remote_get_status_cache', $remote, 30 * MINUTE_IN_SECONDS );
+							}
+
+							$gd_support = array();
+							if ( function_exists( 'gd_info' ) ) {
+								foreach ( gd_info() as $key => $value ) {
+									$gd_support[ $key ] = $value;
+								}
+							}
+
+							$status['server_info']        = isset( $_SERVER['SERVER_SOFTWARE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ) : '';
+							$status['php_version']        = PHP_VERSION;
+							$status['post_max_size']      = ini_get( 'post_max_size' );
+							$status['max_input_vars']     = ini_get( 'max_input_vars' );
+							$status['max_execution_time'] = ini_get( 'max_execution_time' );
+							$status['suhosin']            = extension_loaded( 'suhosin' );
+							$status['imagick']            = extension_loaded( 'imagick' );
+							$status['gd']                 = extension_loaded( 'gd' ) && function_exists( 'gd_info' );
+							$status['gd_webp']            = extension_loaded( 'gd' ) && $gd_support['WebP Support'];
+							$status['fileinfo']           = extension_loaded( 'fileinfo' ) && ( function_exists( 'finfo_open' ) || function_exists( 'mime_content_type' ) );
+							$status['curl']               = extension_loaded( 'curl' ) && function_exists( 'curl_version' );
+							$status['wp_remote_get']      = ! is_wp_error( $remote ) && $remote['response']['code'] >= 200 && $remote['response']['code'] < 300;
+
+							/** Plugins */
+							$status['plugins'] = $this->data_active_plugin();
+
+							return $status;
+						}
+						/**
+						 * Data active plugin
+						 *
+						 * @return array
+						 */
+						public function data_active_plugin() {
+							$active_plugin = array();
+
+							$plugins = array_merge(
+								array_flip( (array) get_option( 'active_plugins', array() ) ),
+								(array) get_site_option( 'active_sitewide_plugins', array() )
+							);
+
+							$plugins = array_intersect_key( get_plugins(), $plugins );
+
+							if ( count( $plugins ) > 0 ) {
+								foreach ( $plugins as $plugin ) {
+									$item                = array();
+									$item['uri']         = isset( $plugin['PluginURI'] ) ? esc_url( $plugin['PluginURI'] ) : '#';
+									$item['name']        = isset( $plugin['Name'] ) ? $plugin['Name'] : esc_html__( 'unknown', 'financio' );
+									$item['author_uri']  = isset( $plugin['AuthorURI'] ) ? esc_url( $plugin['AuthorURI'] ) : '#';
+									$item['author_name'] = isset( $plugin['Author'] ) ? $plugin['Author'] : esc_html__( 'unknown', 'financio' );
+									$item['version']     = isset( $plugin['Version'] ) ? $plugin['Version'] : esc_html__( 'unknown', 'financio' );
+
+									$content = esc_html__( 'by', 'financio' );
+
+									$active_plugin[] = array(
+										'type'            => 'status',
+										'title'           => $item['name'],
+										'content'         => $content,
+										'link'            => $item['author_uri'],
+										'link_text'       => $item['author_name'],
+										'additional_text' => $item['version'],
+									);
+								}
+							}
+
+							return $active_plugin;
+						}
+					
+			
+						/**
+						 * Add Menu
+						 */
+						public function admin_menu() {
+							add_theme_page(
+								esc_html__('Financio Dashboard', 'financio'),
+								esc_html__('Financio Dashboard', 'financio'),
+								'edit_theme_options',
+								'financio-dashboard',
+								array( $this, 'load_dashboard' ),
+								1
+							);
+						}
+
+						/**
+						 * Template page
+						 */
+						public function load_dashboard() {
+							?>
+								<div id='gutenverse-theme-dashboard'>
+								</div>
+							<?php
+						}
+					
 }

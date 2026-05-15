@@ -1,0 +1,568 @@
+# Copyright (C) 2026 Jegstudio
+# This file is distributed under the GNU General Public License v3 or later..
+msgid ""
+msgstr ""
+"Project-Id-Version: Financio 1.3.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/theme/financio-zgctlR4gWH2d\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-05-14T14:28:42+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.10.0\n"
+"X-Domain: financio\n"
+
+#. Theme Name of the theme
+#: style.css
+#: inc/class/class-init.php:1671
+msgid "Financio"
+msgstr ""
+
+#. Theme URI of the theme
+#: style.css
+msgid "https://gutenverse.com/themes/financio/"
+msgstr ""
+
+#. Description of the theme
+#: style.css
+#: inc/class/class-init.php:1672
+msgid "Financio is a Finance Company, Financial Advisor WordPress Block Theme designed for professionals and businesses that want to build a trustworthy and modern financial website. Built with full site editing and powered by Gutenverse, this theme offers a flexible and clean platform to present financial services, investment solutions, and business expertise with a professional layout. Whether you run a finance company or offer advisory services, Financio helps you communicate your value with clarity and credibility. It is ideal for financial advisors, investment firms, accounting services, consulting agencies, and fintech startups looking to establish a strong online presence. With responsive layouts, customizable block patterns, and well-structured pages, you can easily highlight services, case studies, team profiles, and client testimonials. Optimized for performance and usability, Financio enables you to create a reliable website that reflects your brand and expertise in Finance Company, Financial Advisor services. If you are looking for a scalable and professional solution, Financio is a dependable Finance Company, Financial Advisor WordPress theme to grow your financial business online."
+msgstr ""
+
+#. Author of the theme
+#: style.css
+msgid "Jegstudio"
+msgstr ""
+
+#. Author URI of the theme
+#: style.css
+msgid "https://gutenverse.com/"
+msgstr ""
+
+#: inc/class/class-block-patterns.php:57
+msgid "Financio Core Patterns"
+msgstr ""
+
+#: inc/class/class-block-patterns.php:61
+msgid "Financio Gutenverse Patterns"
+msgstr ""
+
+#: inc/class/class-block-patterns.php:62
+msgid "Financio Gutenverse PRO Patterns"
+msgstr ""
+
+#: inc/class/class-init.php:1673
+msgid "Plugin Requirement"
+msgstr ""
+
+#: inc/class/class-init.php:1674
+msgid "This theme require some plugins. Please make sure all the plugin below are installed and activated."
+msgstr ""
+
+#: inc/class/class-init.php:1680
+msgid "Install Gutenverse Plugin"
+msgstr ""
+
+#: inc/class/class-init.php:1681
+msgid "Activate Gutenverse Plugin"
+msgstr ""
+
+#: inc/class/class-init.php:1682
+msgid "Gutenverse Plugin Installed"
+msgstr ""
+
+#: inc/class/class-init.php:1696
+#: inc/class/class-plugin-notice.php:90
+msgid "Gutenverse"
+msgstr ""
+
+#: inc/class/class-init.php:1697
+#: inc/class/class-plugin-notice.php:91
+msgid "Gutenverse is a WordPress blocks plugin, page builder, and website builder for the native Block Editor and Site Editor. Create fast, responsive websites without code using 57 blocks, 600+ templates, global styles, responsive controls, popup builder tools, and block theme support."
+msgstr ""
+
+#: inc/class/class-init.php:1710
+#: inc/class/class-plugin-notice.php:104
+msgid "Gutenverse Form"
+msgstr ""
+
+#: inc/class/class-init.php:1711
+#: inc/class/class-plugin-notice.php:105
+msgid "Gutenverse Form is a WordPress form plugin, contact form builder, block form plugin, and booking form builder for the native Block Editor. Create contact forms, booking forms, reservation forms, subscribe forms, lead forms, feedback forms, and custom WordPress forms without code."
+msgstr ""
+
+#: inc/class/class-init.php:1723
+#: inc/class/class-plugin-notice.php:117
+msgid "Gutenverse Companion"
+msgstr ""
+
+#: inc/class/class-init.php:1724
+#: inc/class/class-plugin-notice.php:118
+msgid "A companion plugin designed specifically to enhance and extend the functionality of Gutenverse base themes. This plugin integrates seamlessly with the base themes, providing additional features, customization options, and advanced tools to optimize the overall user experience and streamline the development process."
+msgstr ""
+
+#: inc/class/class-init.php:1750
+msgid "Financio PRO"
+msgstr ""
+
+#: inc/class/class-init.php:1813
+msgid "You don't have any demo activated"
+msgstr ""
+
+#: inc/class/class-init.php:1881
+#: inc/class/class-init.php:1883
+#: inc/class/class-init.php:1884
+msgid "unknown"
+msgstr ""
+
+#: inc/class/class-init.php:1886
+msgid "by"
+msgstr ""
+
+#: inc/class/class-init.php:1908
+#: inc/class/class-init.php:1909
+msgid "Financio Dashboard"
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:347
+msgid "Installing..."
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:387
+msgid "Install Failed, Try Again"
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:401
+msgid "Thank you For Installing Financio Theme"
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:403
+msgid "Unlock the full potential of your website with the recommended plugins."
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:405
+msgid "Activate it to explore exclusive extensions, ready-to-use demo templates, and powerful features that make building your site easier and more enjoyable."
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:409
+msgid "Install Recommended Plugins"
+msgstr ""
+
+#: inc/class/class-plugin-notice.php:413
+msgid "Don\\'t refresh the page when installing recommended plugins"
+msgstr ""
+
+#: inc/patterns/financio-404.php:6
+msgid "404"
+msgstr ""
+
+#: inc/patterns/financio-call-to-action.php:6
+msgid "Call to Action"
+msgstr ""
+
+#: inc/patterns/financio-faq.php:6
+msgid "FAQ"
+msgstr ""
+
+#: inc/patterns/financio-feature-2.php:6
+msgid "Feature 2"
+msgstr ""
+
+#: inc/patterns/financio-feature.php:6
+msgid "Feature"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-404-title.php:6
+msgid "Gutenverse 404 Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-archive-title.php:6
+msgid "Gutenverse Archive Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-cta.php:6
+msgid "Gutenverse Call to Action"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-description.php:6
+msgid "Gutenverse Description"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-feature-2.php:6
+msgid "Gutenverse Feature 2"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-feature.php:6
+msgid "Gutenverse Feature"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-footer.php:6
+msgid "Gutenverse Footer"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-header.php:6
+msgid "Gutenverse Header"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-hero.php:6
+msgid "Gutenverse Hero"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-index-title.php:6
+msgid "Gutenverse Index Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-page-title.php:6
+msgid "Gutenverse Page Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-search-title.php:6
+msgid "Gutenverse Search Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-section-1.php:6
+msgid "Gutenverse Section 1"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-single-content.php:6
+msgid "Gutenverse Single Content"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-single-title.php:6
+msgid "Gutenverse Single Title"
+msgstr ""
+
+#: inc/patterns/financio-gutenverse-team.php:6
+msgid "Gutenverse Team"
+msgstr ""
+
+#: inc/patterns/financio-hero-archive-title.php:6
+msgid "Archive Hero Title"
+msgstr ""
+
+#: inc/patterns/financio-hero-index-title.php:6
+msgid "Index Hero Title"
+msgstr ""
+
+#: inc/patterns/financio-hero-search-title.php:6
+msgid "Search Hero Title"
+msgstr ""
+
+#: inc/patterns/financio-post-title.php:6
+msgid "Post Title"
+msgstr ""
+
+#: inc/patterns/financio-section-3.php:6
+msgid "Section 3 with Animation"
+msgstr ""
+
+#: inc/patterns/financio-section-4.php:6
+msgid "Section 4 with Animation"
+msgstr ""
+
+#: theme.json
+msgctxt "Custom template name"
+msgid "Blank canvas"
+msgstr ""
+
+#: theme.json
+msgctxt "Custom template name"
+msgid "Full Width"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Primary (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Secondary (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Text (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Border (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "White (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Grey Soft (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Black (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Overlay (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Grey (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Black 2 (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Quote (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Hover Button (Legacy)"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Text Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Text Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Accent"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Accent Hover"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Backgroun Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Backgroun Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Backgroun Tertiary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Border"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Border Input"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Text Placeholder"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Overlay"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Black 2"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Black"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Quote"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "White"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Text Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Text Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Accent"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Accent Hover"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Background Primary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Background Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Background Tertiary"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Border"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Border Input"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Text Placeholder"
+msgstr ""
+
+#: theme.json
+msgctxt "Color name"
+msgid "Dark Secondary"
+msgstr ""
+
+#: theme.json
+msgctxt "Font family name"
+msgid "Heebo"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Small"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Medium"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Large"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Extra Large"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "XX LARGE"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 1"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 2"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 3"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 4"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 5"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "HEADING 6"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 1"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 2"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 3"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 4"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 5"
+msgstr ""
+
+#: theme.json
+msgctxt "Font size name"
+msgid "Heading 6"
+msgstr ""
